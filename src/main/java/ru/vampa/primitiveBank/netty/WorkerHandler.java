@@ -46,8 +46,8 @@ public class WorkerHandler extends ChannelInboundHandlerAdapter {
             throws NoAccountRegisteredException, InsufficientFundsException {
         final FullHttpRequest request = (FullHttpRequest) obj;
 
-        final String operation = request.headers().get(HEAD_OPERATION);
-        final Long accountId = Long.parseUnsignedLong(request.headers().get(HEAD_ACCOUNT_ID));
+        final String operation = ctx.channel().attr(KEY_OPERATION).get();
+        final Long accountId = ctx.channel().attr(KEY_ACCOUNT_ID).get();
         final Long amount;
 
         final IAccountService accountService = IAccountService.INSTANCE;
@@ -58,18 +58,18 @@ public class WorkerHandler extends ChannelInboundHandlerAdapter {
                 response = getBalanceResponse(accountId, accountService);
                 break;
             case OPER_DEPOSIT: // Внесение
-                amount = Long.parseUnsignedLong(request.headers().get(HEAD_AMOUNT));
+                amount = ctx.channel().attr(KEY_AMOUNT).get();
                 accountService.deposit(accountId, amount);
                 response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NO_CONTENT);
                 break;
             case OPER_TRANSFER: // Перевод на другой счет
-                amount = Long.parseUnsignedLong(request.headers().get(HEAD_AMOUNT));
-                final Long destinationId = Long.parseUnsignedLong(request.headers().get(HEAD_DESTINATION_ID));
+                amount = ctx.channel().attr(KEY_AMOUNT).get();
+                final Long destinationId = ctx.channel().attr(KEY_DESTINATION_ID).get();
                 accountService.transfer(accountId, destinationId, amount);
                 response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NO_CONTENT);
                 break;
             case OPER_WITHDRAW: // Снятие
-                amount = Long.parseUnsignedLong(request.headers().get(HEAD_AMOUNT));
+                amount = ctx.channel().attr(KEY_AMOUNT).get();
                 accountService.withdraw(accountId, amount);
                 response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NO_CONTENT);
                 break;

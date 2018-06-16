@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
+import io.netty.util.AttributeKey;
 import ru.vampa.primitiveBank.netty.RequestFilterHandler;
 import ru.vampa.primitiveBank.netty.WorkerHandler;
 
@@ -20,13 +21,13 @@ import java.nio.charset.StandardCharsets;
  */
 
 public class Server implements Runnable {
-    // заголовки, используемые для передачи параметров в запросе между хендлерами
-    public static final String HEAD_OPERATION = "requested-operaion";
-    public static final String HEAD_ACCOUNT_ID = "account-id";
-    public static final String HEAD_DESTINATION_ID = "destination-id";
-    public static final String HEAD_AMOUNT = "amount";
+    // ключи, используемые для передачи параметров между хендлерами
+    public static final AttributeKey<String> KEY_OPERATION = AttributeKey.valueOf("requested-operaion");
+    public static final AttributeKey<Long> KEY_ACCOUNT_ID = AttributeKey.valueOf("account-id");
+    public static final AttributeKey<Long> KEY_DESTINATION_ID = AttributeKey.valueOf("destination-id");
+    public static final AttributeKey<Long> KEY_AMOUNT = AttributeKey.valueOf("amount");
 
-    // коды операций, передаются в заголовке operation и, по совместительству, являются названиями ресурсов,
+    // коды операций, передаются в KEY_OPERATION и, по совместительству, являются названиями ресурсов,
     // обращение к которым, вызывают соответствующую операцию
     public static final String OPER_BALANCE = "balance";
     public static final String OPER_DEPOSIT = "deposit";

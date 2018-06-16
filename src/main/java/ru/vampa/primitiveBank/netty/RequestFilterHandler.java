@@ -17,7 +17,7 @@ import static ru.vampa.primitiveBank.Server.*;
 
 /**
  * Хендлер для получения параметров запроса.
- * Делает валидацию и, если всё хорошо - складывает параметры в заголовки
+ * Делает валидацию и, если всё хорошо - складывает параметры в контекст
  *
  * @author vbelyashov
  */
@@ -42,43 +42,43 @@ public class RequestFilterHandler extends MessageToMessageDecoder<FullHttpReques
     }
 
     /**
-     * Обрабатывает запросы типа 'GET /accounts/123', где 123 - id счета. Проверяет, что id парсится и больше 0.
-     * Складывает в заголовки только код операции (balance) и id счета.
+     * Обрабатывает запросы типа 'GET /accounts/123', где 123 - id счета. Складывает в контекст только
+     * код операции (balance) и id счета.
      */
     private void handleGet(ChannelHandlerContext ctx, FullHttpRequest request, List<Object> out) {
         final List<String> urlParts = getUrlParts(request);
-        if (urlParts == null || urlParts.size() != 2 || !ACCOUNTS_URL.equals(urlParts.get(0))) {
+        if (urlParts != null && urlParts.size() == 2 && ACCOUNTS_URL.equals(urlParts.get(0))) {
+            final Long accountId = parseAndCheck(urlParts.get(1));
+            if (accountId != null) {
+                ctx.channel().attr(KEY_ACCOUNT_ID).set(accountId);
+                ctx.channel().attr(KEY_OPERATION).set(OPER_BALANCE);
+                out.add(request);
+                request.retain();
+            } else
+                Server.sendError(ctx, "invalid account id", HttpResponseStatus.BAD_REQUEST);
+        } else
             send404(ctx);
-            return;
-        }
-
-        final String accountId = urlParts.get(1);
-        if (parsesIncorrect(accountId)) { // Проверяет id только на соответствие формата (Long)
-            Server.sendError(ctx, "invalid account id", HttpResponseStatus.BAD_REQUEST);
-            return;
-        }
-
-        request.headers().add(HEAD_OPERATION, OPER_BALANCE);
-        request.headers().add(HEAD_ACCOUNT_ID, accountId);
-        out.add(request);
-        request.retain();
     }
 
     /**
      * Обрабатывает запросы типа 'POST /accounts/123/withdraw', где 123 - id счета, а withdraw - операция.
-     * Складывает в заголовки код операции, сумму и счет назначения (если это перевод). Проверяет парсятся ли параметры
-     * перед отправкой.
+     * Складывает в контекст код операции, сумму и счет назначения (если это перевод).
      */
     private void handlePost(ChannelHandlerContext ctx, FullHttpRequest request, List<Object> out) {
         // Достаем сумму операции из тела запроса
         final ByteBuf content = request.content();
         if (content.isReadable()) {
-            final String amount = content.readCharSequence(content.readableBytes(), CharsetUtil.UTF_8).toString();
-            if (parsesIncorrect(amount)) {
+            final String contentString = content.readCharSequence(content.readableBytes(), CharsetUtil.UTF_8).toString();
+            final Long amount = parseAndCheck(contentString);
+            if (amount != null)
+                ctx.channel().attr(KEY_AMOUNT).set(amount);
+            else {
                 Server.sendError(ctx, "invalid amount", HttpResponseStatus.BAD_REQUEST);
                 return;
             }
-            request.headers().add(HEAD_AMOUNT, amount);
+        } else {
+            Server.sendError(ctx, "invalid amount", HttpResponseStatus.BAD_REQUEST);
+            return;
         }
 
         final List<String> urlParts = getUrlParts(request);
@@ -90,30 +90,30 @@ public class RequestFilterHandler extends MessageToMessageDecoder<FullHttpReques
         final String operation = urlParts.get(2);
         switch (operation) {
             case OPER_TRANSFER:
-                // Для перевода требуется id счета назначения, проверяем, что он есть и парсится
+                // Для перевода требуется id счета назначения
                 if (urlParts.size() > 3) {
-                    final String destinationId = urlParts.get(3);
-                    if (parsesIncorrect(destinationId)) { // Проверяет id только на соответствие формата (Long)
+                    final Long destinationId = parseAndCheck(urlParts.get(3));
+                    if (destinationId != null)
+                        ctx.channel().attr(KEY_DESTINATION_ID).set(destinationId);
+                    else {
                         Server.sendError(ctx, "invalid destination id", HttpResponseStatus.BAD_REQUEST);
-                        return;
+                        break;
                     }
-                    request.headers().add(HEAD_DESTINATION_ID, destinationId);
                 }
                 else {
                     Server.sendError(ctx, "no destination for transfer", HttpResponseStatus.BAD_REQUEST);
-                    return;
+                    break;
                 }
             case OPER_DEPOSIT:
             case OPER_WITHDRAW:
-                final String accountId = urlParts.get(1);
-                if (parsesIncorrect(accountId)) {
+                final Long accountId = parseAndCheck(urlParts.get(1));
+                if (accountId != null) {
+                    ctx.channel().attr(KEY_ACCOUNT_ID).set(accountId);
+                    ctx.channel().attr(KEY_OPERATION).set(operation);
+                    out.add(request);
+                    request.retain();
+                } else
                     Server.sendError(ctx, "invalid account id", HttpResponseStatus.BAD_REQUEST);
-                    return;
-                }
-                request.headers().add(HEAD_ACCOUNT_ID, accountId);
-                request.headers().add(HEAD_OPERATION, operation);
-                out.add(request);
-                request.retain();
                 break;
             default:
                 // Если такой операции нет для POST - 404
@@ -140,14 +140,15 @@ public class RequestFilterHandler extends MessageToMessageDecoder<FullHttpReques
     }
 
     /**
-     * Проверка строки на возможность распарсить её в UnsignedLong, получившееся число должно быть больше нуля
+     * Парсит строку в UnsignedLong, получившееся число должно быть больше нуля
+     * @return число больше нуля, null - в противном случае или при ошибке
      */
-    private static boolean parsesIncorrect(String suspiciousString) {
+    private static Long parseAndCheck(String s) {
         try {
-            final long parsedLong = Long.parseUnsignedLong(suspiciousString);
-            return parsedLong < 1;
+            final Long value = Long.parseUnsignedLong(s);
+            return value > 0 ? value : null;
         } catch (NumberFormatException e) {
-            return true;
+            return null;
         }
     }
 }
