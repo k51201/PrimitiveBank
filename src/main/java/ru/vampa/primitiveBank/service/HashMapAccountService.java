@@ -27,8 +27,22 @@ public class HashMapAccountService implements IAccountService {
     @Override
     public void transfer(long accountId, long destinationId, long amount)
             throws NoAccountRegisteredException, InsufficientFundsException {
-        if (amount < 0)
-            transfer(destinationId, accountId, amount);
+        if (accountId < destinationId)
+            synchronized ((Long) accountId) {
+                synchronized ((Long) destinationId) {
+                    doTransfer(accountId, destinationId, amount);
+                }
+            }
+        else if (destinationId < accountId)
+            synchronized ((Long) destinationId) {
+                synchronized ((Long) accountId) {
+                    doTransfer(accountId, destinationId, amount);
+                }
+            }
+    }
+
+    private void doTransfer(long accountId, long destinationId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
+        if (amount < 0) transfer(destinationId, accountId, -amount);
 
         final AtomicLong to = getAccount(destinationId);
         trySubtract(accountId, amount);
