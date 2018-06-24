@@ -35,20 +35,18 @@ public interface IAccountService {
      * Внесение средств на счет
      * @param accountId id счета
      * @param amount сумма внесения, не может быть отрицательной
-     * @return состояние счета после операции
      * @throws NoAccountRegisteredException если счет с таким id не существует
      * @throws IllegalArgumentException при отрицательной сумме
      */
-    long deposit(long accountId, long amount) throws NoAccountRegisteredException;
+    void deposit(long accountId, long amount) throws NoAccountRegisteredException;
 
     /**
      * Снятие средств со счета
      * @param accountId id счета
      * @param amount сумма снятия, не может быть отрицательной
-     * @return состояние счета после операции
      * @throws InsufficientFundsException если недостаточно средств на счете
      * @throws NoAccountRegisteredException если счет с таким id не существует
      * @throws IllegalArgumentException при отрицательной сумме
      */
-    long withdraw(long accountId, long amount) throws InsufficientFundsException, NoAccountRegisteredException;
+    void withdraw(long accountId, long amount) throws InsufficientFundsException, NoAccountRegisteredException;
 }

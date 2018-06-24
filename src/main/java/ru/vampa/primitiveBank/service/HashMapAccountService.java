@@ -2,7 +2,6 @@ package ru.vampa.primitiveBank.service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -13,13 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class HashMapAccountService implements IAccountService {
     private final Map<Long, AtomicLong> accounts = new HashMap<>();
-
-    HashMapAccountService() {
-        // В тестовых целях создаем 999 счетов с неким количеством средств
-        final Random random = new Random();
-        for (long i = 1; i < 1000; i++)
-            accounts.put(i, new AtomicLong(random.nextInt(500)));
-    }
 
     @Override
     public long getTotalBalance() {
@@ -44,15 +36,15 @@ public class HashMapAccountService implements IAccountService {
     }
 
     @Override
-    public long deposit(long accountId, long amount) throws NoAccountRegisteredException {
+    public void deposit(long accountId, long amount) throws NoAccountRegisteredException {
         if (amount < 0)
             throw new IllegalArgumentException();
-        return getAccount(accountId).addAndGet(amount);
+        getAccount(accountId).addAndGet(amount);
     }
 
     @Override
-    public long withdraw(long accountId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
-        return trySubtract(accountId, amount);
+    public void withdraw(long accountId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
+        trySubtract(accountId, amount);
     }
 
     /**
@@ -71,11 +63,10 @@ public class HashMapAccountService implements IAccountService {
      * Пытаемся снять деньги со счета, пока не поймем, что либо сняли, либо на счете столько нет
      * @param accountId id счета
      * @param amount сумма снятия
-     * @return состояние счета после снятия
      * @throws NoAccountRegisteredException если счет не существует
      * @throws InsufficientFundsException если недостаточно средств на счете
      */
-    private long trySubtract(long accountId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
+    private void trySubtract(long accountId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
         if (amount < 0)
             throw new IllegalArgumentException();
 
@@ -87,7 +78,5 @@ public class HashMapAccountService implements IAccountService {
                 throw new InsufficientFundsException(accountId);
             next = prev - amount;
         } while (!account.compareAndSet(prev, next));
-
-        return next;
     }
 }
