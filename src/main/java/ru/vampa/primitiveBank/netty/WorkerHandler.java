@@ -96,10 +96,11 @@ public class WorkerHandler extends ChannelInboundHandlerAdapter {
 
         final DefaultFullHttpResponse response =
                 new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, responseContent);
-        response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
-        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-        response.headers().set(HttpHeaderNames.ACCEPT_CHARSET, StandardCharsets.UTF_8.name());
+        response.headers()
+                .set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                .set(HttpHeaderNames.CONTENT_TYPE, "text/plain")
+                .set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
+                .set(HttpHeaderNames.ACCEPT_CHARSET, StandardCharsets.UTF_8.name());
         return response;
     }
 }
