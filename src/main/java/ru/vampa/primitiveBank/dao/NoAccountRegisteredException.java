@@ -1,4 +1,4 @@
-package ru.vampa.primitiveBank.service;
+package ru.vampa.primitiveBank.dao;
 
 /**
  * Исключение, говорящее нам, что такого счета в системе нет.
@@ -6,8 +6,8 @@ package ru.vampa.primitiveBank.service;
  *
  * @author vbelyashov
  */
-public class NoAccountRegisteredException extends Exception {
+public class NoAccountRegisteredException extends RuntimeException {
     NoAccountRegisteredException(long accountId) {
-        super(String.valueOf(accountId), null, true, false);
+        super("account with id " + accountId + " not found", null, true, false);
     }
 }

@@ -1,4 +1,6 @@
-package ru.vampa.primitiveBank.service;
+package ru.vampa.primitiveBank.dao;
+
+import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,8 +12,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author vbelyashov
  */
 
-public class HashMapAccountService implements IAccountService {
+@Repository
+public class HashMapAccountDao implements IAccountDao {
     private final Map<Long, AtomicLong> accounts = new HashMap<>();
+
+    public Map<Long, AtomicLong> getAccounts() {
+        return accounts;
+    }
 
     @Override
     public long getTotalBalance() {

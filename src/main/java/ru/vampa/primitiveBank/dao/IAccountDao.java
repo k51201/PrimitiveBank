@@ -1,15 +1,13 @@
-package ru.vampa.primitiveBank.service;
+package ru.vampa.primitiveBank.dao;
 
 /**
- * Интерфейс для службы, работающей со счетами
+ * Интерфейс для dao, работающим со счетами
  *
  * @author vbelyashov
  */
-public interface IAccountService {
-    IAccountService INSTANCE = new HashMapAccountService();
-
+public interface IAccountDao {
     /**
-     * Суммарный баланс всех доступных счетов (мог бы быть BigInteger, но, пожалуй, излишне)
+     * Суммарный баланс всех доступных счетов
      */
     long getTotalBalance();
 
