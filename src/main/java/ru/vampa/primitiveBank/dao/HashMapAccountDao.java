@@ -49,7 +49,7 @@ public class HashMapAccountDao implements IAccountDao {
     }
 
     private void doTransfer(long accountId, long destinationId, long amount) throws NoAccountRegisteredException, InsufficientFundsException {
-        if (amount < 0) transfer(destinationId, accountId, -amount);
+        if (amount < 0) doTransfer(destinationId, accountId, -amount);
 
         final AtomicLong to = getAccount(destinationId);
         trySubtract(accountId, amount);
